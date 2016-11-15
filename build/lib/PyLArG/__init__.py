@@ -1,2 +1,2 @@
-from . import gdml
-from . import vtk
+from . import gdml_utils
+from . import vtk_utils

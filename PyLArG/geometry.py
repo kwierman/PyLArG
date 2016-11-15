@@ -13,15 +13,19 @@ class Volume:
             self.rotation = [0,0,0]
         else:
             self.rotation = rotation
+
     @property
     def children(self):
         return self._children
+
     @property
     def solid(self):
         return self._solid
+
     @property
     def material(self):
         return self._material
+
 
 class Material:
     def __init__(self, name):
@@ -34,3 +38,7 @@ class Material:
     @property
     def composition(self):
         return self._composition
+
+class Box:
+    def __init__(self, pos):
+        self.pos = []

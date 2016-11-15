@@ -3,6 +3,7 @@ from .geometry import *
 import exceptions
 import logging
 
+
 class ParsingException(exceptions.Exception):
     pass
 
