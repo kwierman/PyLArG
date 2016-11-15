@@ -2,3 +2,7 @@
 *.egg
 ./dist/*
 ./build/*
+*.pyc
+*.c
+*.pyx
+*.gdml

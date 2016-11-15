@@ -23,6 +23,6 @@ setup(
     url="https://github.com/kwierman/PyLArG",
     license='BSD',
     #requires = [],
-    #packages=find_packages(exclude=[]),
+    packages=find_packages(exclude=[]),
     #ext_modules = cythonize("pyerman/*/*.pyx")
 )
