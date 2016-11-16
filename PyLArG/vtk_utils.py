@@ -54,10 +54,10 @@ class Writer:
         self.apply_transformations(linearExtrusion, position, rotation)
 
     def write_subgeometry(self, geometry, external_position, external_rotation):
-        #position = [i + external_position[index] for index, i in enumerate(geometry.position)]
-        #rotation = [i + external_rotation[index] for index, i in enumerate(geometry.rotation)]
-        position = geometry.position
-        rotation = geometry.rotation
+        position = [i + external_position[index] for index, i in enumerate(geometry.position)]
+        rotation = [i + external_rotation[index] for index, i in enumerate(geometry.rotation)]
+        #position = geometry.position
+        #rotation = geometry.rotation
         solid = geometry.solid
         if isinstance(solid, Box):
             self.write_box(solid, position, rotation)

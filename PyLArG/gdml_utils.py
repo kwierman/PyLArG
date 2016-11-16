@@ -53,13 +53,14 @@ class Reader:
         return None
 
     def process_union(self, element):
-        pass
+        #get the first, the second , the rotation and the position
+        return None
 
     def process_subtraction(self, element):
-        pass
+        return None
 
     def process_intersection(self, element):
-        pass
+        return None
 
     def process_solid(self, element):
         if element is None:
@@ -111,7 +112,6 @@ class Reader:
             Defaulting to position
             """.format(volume.attrib['ref']))
         elif positionref is not None:
-            self.logger.info("reverting to position reference")
             posname = positionref.attrib['ref']
             position = self.solids.find("*position[@name='{}']".format(posname))
 
@@ -122,7 +122,6 @@ class Reader:
             Defaulting to rotation
             """.format(volume.attrib['ref']))
         elif rotationref is not None:
-            self.logger.info("reverting to reference rotation")
             rotname = rotationref.attrib['ref']
             rotation = self.solids.find("*rotation[@name='{}']".format(rotname))
 
@@ -139,7 +138,7 @@ class Reader:
             return self.parse_volume(vol,pos,rot)
 
         elif volume is None and solid is not None:
-            vol = Volume(element.attrib['name'])
+            vol = Volume(element.attrib['name'], position, rotation)
             sol = self.solids.find("*[@name='{}']".format(solid.attrib['ref']))
             vol.solid = self.process_solid(sol)
             return vol
