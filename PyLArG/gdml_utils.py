@@ -9,7 +9,7 @@ class ParsingException(exceptions.Exception):
 
 
 class Reader:
-    logger = logging.getLogger("GDML_READER")
+    logger = logging.getLogger("GDMLReader")
 
     def __init__(self, filename):
         tree = ET.parse(filename)
@@ -24,10 +24,13 @@ class Reader:
             raise ParsingException("Not a properly formatted GDML File")
 
     @classmethod
-    def parse_three_vector(self, element):
+    def parse_three_vector(cls, element):
         if element is None:
+            #cls.logger.warning("3-Vector Queried in None Element")
             return None
-        return [element.attrib['x'], element.attrib['y'], element.attrib['z']]
+        return [float(element.attrib['x']),
+                float(element.attrib['y']),
+                float(element.attrib['z'])]
 
     def process_material(self, element):
         if element is None:
@@ -37,6 +40,12 @@ class Reader:
     def process_solid(self, element):
         if element is None:
             self.logger.warning("SolidRef Not Found")
+            return None
+        tag = element.tag
+        self.logger.debug("Processing Solid of Type: {}".format(tag))
+        if tag == "box":
+            return Box(self.parse_three_vector(element))
+        return None
 
     def process_phys_vol(self, element):
         position = element.find('position')
@@ -74,17 +83,18 @@ class Reader:
 
         elif volume is None and solid is not None:
             vol = Volume(element.attrib['name'])
-            sol = self.solids.find("[@name='{}']".format())
+            sol = self.solids.find("*[@name='{}']".format(solid.attrib['ref']))
             vol.solid = self.process_solid(sol)
             return vol
-
         else:
-            logger.error("WARNING, NO BOTTOM ELEMENT DETECTED")
+            logger.error("WARNING, Bottom-Level Element Without Defined Solid")
 
     def parse_volume(self, element, position=None, rotation=None):
         vol = Volume(element.attrib['name'], position, rotation)
         vol.material = self.process_material(element.find("materialref"))
-        vol.solid = self.process_solid(element.find('solidref'))
+        solidref = element.find('solidref').attrib['ref']
+        solid_element = self.solids.find("*[@name='{}']".format(solidref))
+        vol.solid = self.process_solid(solid_element)
         for child in element.findall("physvol"):
             vol.children.append(self.process_phys_vol(child))
         return vol

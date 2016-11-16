@@ -1,8 +1,7 @@
 *.egg-info
 *.egg
-./dist/*
-./build/*
+dist/
+build/
 *.pyc
 *.c
 *.pyx
-*.gdml
