@@ -2,7 +2,10 @@ from invoke import task
 
 @task
 def clean(ctx):
-    ctx.run('find . -name *.pyc | xargs rm')
+    try:
+       ctx.run('find . -name *.pyc | xargs rm')
+    except:
+        pass
     ctx.run('rm -rf build')
     ctx.run('rm -rf dist')
     ctx.run('rm -rf *.egg-info')

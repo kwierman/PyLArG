@@ -42,3 +42,42 @@ class Material:
 class Box:
     def __init__(self, pos):
         self.pos = pos
+
+class Tube:
+    def __init__(self, rmin, rmax, deltaphi, startphi, z):
+        self.rmin = rmin
+        self.rmax = rmax
+        self.deltaphi = deltaphi
+        self.startphi = startphi
+        self.z=z
+
+class Sphere:
+    def __init__(self, rmin, rmax, deltaphi, startphi, starttheta, deltatheta):
+        self.rmin = rmin
+        self.rmax = rmax
+        self.deltaphi = deltaphi
+        self.startphi = startphi
+        self.starttheta = starttheta
+        self.deltatheta = deltatheta
+
+
+class Union:
+    def __init__(self):
+        self.first= None
+        self.second = None
+        self.position = None
+        self.rotation = None
+
+class Intersection:
+    def __init__(self):
+        self.first = None
+        self.second = None
+        self.position = None
+        self.rotation = None
+
+class Subtraction:
+    def __init__(self):
+        self.first = None
+        self.second = None
+        self.position = None
+        self.rotation = None

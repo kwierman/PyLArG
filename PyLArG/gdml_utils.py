@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 from .geometry import *
 import exceptions
 import logging
+from math import pi
 
 
 class ParsingException(exceptions.Exception):
@@ -28,23 +29,70 @@ class Reader:
         if element is None:
             #cls.logger.warning("3-Vector Queried in None Element")
             return None
-        return [float(element.attrib['x']),
-                float(element.attrib['y']),
-                float(element.attrib['z'])]
+        unit=1.0
+        if "unit" in element.attrib:
+            if 'deg' in element.attrib['unit']:
+                unit=1.0
+            elif 'rad' in element.attrib['unit']:
+                unit = 180.0/pi
+            elif 'cm' in element.attrib['unit']:
+                unit = 1.0
+            elif 'm' in element.attrib['unit']:
+                unit=100.0
+            elif 'mm' in element.attrib['unit']:
+                unit=0.1
+            else:
+                self.logger.warning("Unknown Unit: "+element.attrib['unit'])
+        return [float(element.attrib['x'])*unit,
+                float(element.attrib['y'])*unit,
+                float(element.attrib['z'])*unit]
 
     def process_material(self, element):
         if element is None:
             self.logger.warning("MaterialRef Not Found")
         return None
 
+    def process_union(self, element):
+        pass
+
+    def process_subtraction(self, element):
+        pass
+
+    def process_intersection(self, element):
+        pass
+
     def process_solid(self, element):
         if element is None:
             self.logger.warning("SolidRef Not Found")
             return None
         tag = element.tag
-        self.logger.debug("Processing Solid of Type: {}".format(tag))
         if tag == "box":
             return Box(self.parse_three_vector(element))
+        elif tag == 'tube':
+            rmin = 0.0
+            if 'rmin' in element.attrib:
+                rmin = float(element.attrib['rmin'])
+            startphi = 0.0
+            if 'startphi' in element.attrib:
+                startphi = float(element.attrib['startphi'])
+            deltaphi = 360
+            if 'deltaphi' in element.attrib:
+                deltaphi = float(element.attrib['deltaphi'])
+            return Tube(
+                rmin,
+                float(element.attrib['rmax']),
+                deltaphi,
+                startphi,
+                float(element.attrib['z'])
+            )
+        elif tag == 'union':
+            return self.process_union(element)
+        elif tag == 'intersection':
+            return self.process_intersection(element)
+        elif tag == 'subtraction':
+            return self.process_subtraction(element)
+        else:
+            self.logger.warning("Encountered Unknown Solid: " + tag)
         return None
 
     def process_phys_vol(self, element):
@@ -62,12 +110,21 @@ class Reader:
             Parent Element: {}
             Defaulting to position
             """.format(volume.attrib['ref']))
+        elif positionref is not None:
+            self.logger.info("reverting to position reference")
+            posname = positionref.attrib['ref']
+            position = self.solids.find("*position[@name='{}']".format(posname))
+
 
         if rotation is not None and rotationref is not None:
             self.logger.warning("""Both rotation and ref defined.
             Parent Element: {}
             Defaulting to rotation
             """.format(volume.attrib['ref']))
+        elif rotationref is not None:
+            self.logger.info("reverting to reference rotation")
+            rotname = rotationref.attrib['ref']
+            rotation = self.solids.find("*rotation[@name='{}']".format(rotname))
 
         if volume is not None and solid is not None:
             self.logger.warning("Both Volume and Solid ref defined")
