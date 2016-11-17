@@ -1,4 +1,11 @@
-# Raw Geometry definitions
+"""
+    Raw Geometry Definitions.
+    These are meant to interface between the geometry packages as a
+    least common denominator.
+    Packages will thus need to define adaptation methods.
+
+"""
+
 class Volume:
     def __init__(self, name, position=None, rotation=None):
         self.name = name
@@ -32,12 +39,15 @@ class Material:
         self.name = name
         self._formula = ''
         self._composition ={}
+
     @property
     def formula(self):
         return self._formula
+
     @property
     def composition(self):
         return self._composition
+
 
 class Box:
     def __init__(self, pos):
@@ -59,7 +69,6 @@ class Sphere:
         self.startphi = startphi
         self.starttheta = starttheta
         self.deltatheta = deltatheta
-
 
 class Union:
     def __init__(self):

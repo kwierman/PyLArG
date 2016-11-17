@@ -13,19 +13,18 @@ class Writer:
     def apply_transformations(self, geo, position, rotation):
         transform = vtk.vtkTransform()
         transform.Translate(position[0],position[1],position[2])
-        transform.RotateWXYZ(rotation[0], [1,0,0])
-        transform.RotateWXYZ(rotation[1], [0,1,0])
-        transform.RotateWXYZ(rotation[2], [0,0,1])
+        transform.RotateX(rotation[0])
+        transform.RotateY(rotation[1])
+        transform.RotateZ(rotation[2])
 
         transform_filter = vtk.vtkTransformFilter()
         transform_filter.SetTransform(transform)
         transform_filter.SetInputConnection(geo.GetOutputPort())
         transform_filter.Update()
 
-        polydata = vtk.vtkPolyData()
-        polydata.ShallowCopy(transform_filter.GetOutput())
-        self.appendpolydata.AddInputData(polydata)
-        self.appendpolydata.Update()
+        #polydata = vtk.vtkPolyData()
+        #polydata.ShallowCopy(transform_filter.GetOutput())
+        return transform_filter.GetOutput()
 
     def write_box(self, box, position, rotation):
         vtk_box = vtk.vtkCubeSource()
@@ -34,13 +33,15 @@ class Writer:
         vtk_box.SetZLength(box.pos[2])
         #vtk_box.SetCenter(position[0],position[1],position[2])
         vtk_box.Update()
-        self.apply_transformations(vtk_box, position, rotation)
-
+        data = self.apply_transformations(vtk_box, position, rotation)
+        self.appendpolydata.AddInputData(data)
+        self.appendpolydata.Update()
 
     def write_tube(self, tube, position, rotation):
         diskSource = vtk.vtkDiskSource()
         diskSource.SetInnerRadius(tube.rmin)
         diskSource.SetOuterRadius(tube.rmax)
+        diskSource.SetCircumferentialResolution(100.0)
         diskSource.Update()
         #TODO deltaphi and startphi
 
@@ -48,23 +49,66 @@ class Writer:
         linearExtrusion = vtk.vtkLinearExtrusionFilter()
         linearExtrusion.SetInputConnection(diskSource.GetOutputPort())
         linearExtrusion.SetExtrusionTypeToNormalExtrusion()
-        linearExtrusion.SetVector(0,0,tube.z)
+        linearExtrusion.SetVector(0,0,1)
+        linearExtrusion.SetScaleFactor(tube.z)
         linearExtrusion.Update()
 
-        self.apply_transformations(linearExtrusion, position, rotation)
+        data = self.apply_transformations(linearExtrusion, position, rotation)
+        self.appendpolydata.AddInputData(data)
+        self.appendpolydata.Update()
+
+    def write_sphere(self, sphere, position, rotation):
+        sphereSource = vtk.vtkSphereSource()
+        sphereSource.SetRadius(sphere.rmax)
+        sphereSource.SetCenter(position[0],position[1], position[2])
+        data = self.apply_transformations(sphereSource, position, rotation)
+        self.appendpolydata.AddInputData(data)
+        self.appendpolydata.Update()
+
+    def write_boolean_operation(self, obj, position, rotation, operation):
+        booleanFilter = vtk.vtkBooleanOperationPolyDataFilter()
+        input1 = None
+        input2 = None
+
+        if vtk.VTK_MAJOR_VERSION <= 5:
+            booleanOperation.SetInputConnection( 0, input1.GetProducerPort() )
+            booleanOperation.SetInputConnection( 1, input2.GetProducerPort() )
+        else:
+            booleanOperation.SetInputData( 0, input1 )
+            booleanOperation.SetInputData( 1, input2 )
+
+    def write_union(self, union, position, rotation):
+        operation = 0
+        self.write_boolean_operation(union, position, rotation, operation)
+
+    def write_intersection(self, union, position, rotation):
+        operation = 1
+        self.write_boolean_operation(union, position, rotation, operation)
+
+    def write_subtraction(self, union, position, rotation):
+        operation = 2
+        self.write_boolean_operation(union, position, rotation, operation)
 
     def write_subgeometry(self, geometry, external_position, external_rotation):
-        position = [i + external_position[index] for index, i in enumerate(geometry.position)]
-        rotation = [i + external_rotation[index] for index, i in enumerate(geometry.rotation)]
-        #position = geometry.position
-        #rotation = geometry.rotation
+        #position = [i + external_position[index] for index, i in enumerate(geometry.position)]
+        #rotation = [i + external_rotation[index] for index, i in enumerate(geometry.rotation)]
+        position = geometry.position
+        rotation = geometry.rotation
         solid = geometry.solid
         if isinstance(solid, Box):
             self.write_box(solid, position, rotation)
         elif isinstance(solid, Tube):
             self.write_tube(solid, position, rotation)
+        elif isinstance(solid, Sphere):
+            self.write_sphere(solid, position, rotation)
+        elif isinstance(solid, Union):
+            self.write_union(solid, position, rotation)
+        elif isinstance(solid, Subtraction):
+            self.write_intersection(solid, position, rotation)
+        elif isinstance(solid, Intersection):
+            self.write_union(solid, position, rotation)
         else:
-            self.logger.warning("Encountered Unknown Type: {}".format(type(solid)))
+            self.logger.warning("Encountered Unknown Type: {}".format(solid.__class__.__name__))
         for child in geometry._children:
             self.write_subgeometry(child, position, rotation)
 

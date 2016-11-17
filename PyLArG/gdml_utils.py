@@ -52,15 +52,45 @@ class Reader:
             self.logger.warning("MaterialRef Not Found")
         return None
 
-    def process_union(self, element):
+    def process_boolean(self, element, geo):
+        first = element.find('first')
+        first_name = first.attrib['ref']
+        first_vol = self.solids.find("*[@name='{}']".format(first_name))
+        geo.first = self.process_solid(first_vol)
+
+        second = element.find('second')
+        second_name = second.attrib['ref']
+        second_vol = self.solids.find("*[@name='{}']".format(
+            second_name))
+        geo.second = self.process_solid(first_vol)
         #get the first, the second , the rotation and the position
-        return None
+        try:
+            rotation = element.find('rotation')
+            geo.rotation = self.parse_three_vector(rotation)
+        except:
+            pass
+        try:
+            position = element.find('position')
+            geo.position = self.parse_three_vector(position)
+        except:
+            pass
+
+        return geo
+
+    def process_union(self, element):
+        union = Union()
+        self.process_boolean(element, union)
+        return union
 
     def process_subtraction(self, element):
-        return None
+        subtraction = Subtraction()
+        self.process_boolean(element, subtraction)
+        return subtraction
 
     def process_intersection(self, element):
-        return None
+        intersection = Intersection()
+        self.process_boolean(element, intersection)
+        return intersection
 
     def process_solid(self, element):
         if element is None:
@@ -113,8 +143,8 @@ class Reader:
             """.format(volume.attrib['ref']))
         elif positionref is not None:
             posname = positionref.attrib['ref']
-            position = self.solids.find("*position[@name='{}']".format(posname))
-
+            position = self.solids.find("*position[@name='{}']".format(
+                posname))
 
         if rotation is not None and rotationref is not None:
             self.logger.warning("""Both rotation and ref defined.
@@ -123,7 +153,8 @@ class Reader:
             """.format(volume.attrib['ref']))
         elif rotationref is not None:
             rotname = rotationref.attrib['ref']
-            rotation = self.solids.find("*rotation[@name='{}']".format(rotname))
+            rotation = self.solids.find("*rotation[@name='{}']".format(
+                rotname))
 
         if volume is not None and solid is not None:
             self.logger.warning("Both Volume and Solid ref defined")
