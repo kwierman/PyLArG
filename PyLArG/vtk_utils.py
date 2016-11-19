@@ -26,9 +26,10 @@ class Writer:
 
         transform_filter = vtk.vtkTransformFilter()
         transform_filter.SetTransform(transform)
-        transform_filter.SetInputConnection(geo.GetOutput())
+        transform_filter.SetInputConnection(geo)
         transform_filter.Update()
-        return transform_filter.GetOutput()
+        self.logger.debug("Applying Transformation")
+        return transform_filter
 
     def write_box(self, box, position, rotation):
         vtk_box = vtk.vtkCubeSource()
@@ -37,7 +38,8 @@ class Writer:
         vtk_box.SetZLength(box.pos[2])
         #vtk_box.SetCenter(position[0],position[1],position[2])
         vtk_box.Update()
-        data = self.apply_transformations(vtk_box, position, rotation)
+        data = self.apply_transformations(vtk_box.GetOutputPort(), position, rotation)
+        self.logger.debug("Writing Box")
         return data
 
     def write_tube(self, tube, position, rotation):
@@ -58,18 +60,20 @@ class Writer:
         linearExtrusion.SetScaleFactor(tube.z)
         linearExtrusion.Update()
 
-        data = self.apply_transformations(linearExtrusion, position, rotation)
+        data = self.apply_transformations(linearExtrusion.GetOutputPort(), position, rotation)
+        self.logger.debug("Writing Tube")
         return data
 
     def write_sphere(self, sphere, position, rotation):
         sphereSource = vtk.vtkSphereSource()
         sphereSource.SetRadius(sphere.rmax)
         sphereSource.SetCenter(position[0],position[1], position[2])
-        data = self.apply_transformations(sphereSource, position, rotation)
+        data = self.apply_transformations(sphereSource.GetOutputPort(), position, rotation)
+        self.logger.debug("Writing Sphere")
         return data
 
     def write_boolean_operation(self, obj, position, rotation, operation):
-        # TODO: UNdo this
+        #TODO: Stop these shenanigans
         return None
         logging.debug("Writing Boolean Object {} : {}, {}".format(
             obj.__class__.__name__,
@@ -116,21 +120,41 @@ class Writer:
         if input2 is None:
             self.logger.warning("Input2 is Null for "+ obj.second.__class__.__name__)
 
+        if(input1 is None or input2 is None):
+            return None
 
-        transformed_surface = self.apply_transformations(input2, obj.position, obj.rotation)
+        #if isinstance(obj.first, Box) or isinstance(obj.first, Tube) or isinstance(obj.first, Sphere):
+        tmp = vtk.vtkTriangleFilter()
+        tmp.SetInputConnection(input1.GetOutputPort())
+        tmp.Update()
+        input1 = tmp
+
+        #if isinstance(obj.second, Box) or isinstance(obj.second, Tube) or isinstance(obj.second, Sphere):
+        tmp = vtk.vtkTriangleFilter()
+        tmp.SetInputConnection(input2.GetOutputPort())
+        tmp.Update()
+        input2 = tmp
+
+        #So, here, the trick
+        transformed_surface = self.apply_transformations(input2.GetOutputPort(), obj.position, obj.rotation)
 
         if vtk.VTK_MAJOR_VERSION <= 5:
             booleanFilter.SetInputConnection( 0, input1.GetProducerPort() )
             booleanFilter.SetInputConnection( 1, input2.GetProducerPort() )
         else:
-            booleanFilter.SetInputData( 0, input1 )
-            booleanFilter.SetInputData( 1, input2 )
+            booleanFilter.SetInputData( 0, input1.GetOutputDataObject(0) )
+            booleanFilter.SetInputData( 1, transformed_surface.GetOutputDataObject(0) )
 
-
-        booleanFilter.SetTolerance(1.e-6)
-        booleanFilter.SetOperation(operation)
-        booleanFilter.Update()
-        return self.apply_transformations(booleanFilter, rotation, position)
+        self.logger.debug("Applying Boolean Filter")
+        try:
+            booleanFilter.SetTolerance(1.0)
+            booleanFilter.SetOperation(operation)
+            booleanFilter.Update()
+            self.logger.debug("Finished Creating Boolean Surface")
+            return self.apply_transformations(booleanFilter.GetOutputPort(), rotation, position)
+        except:
+            self.logger.warning("Failed")
+            return None
 
     def write_union(self, union, position, rotation):
         operation = 0
@@ -145,10 +169,10 @@ class Writer:
         return self.write_boolean_operation(union, position, rotation, operation)
 
     def write_subgeometry(self, geometry, external_position, external_rotation):
-        #position = [i + external_position[index] for index, i in enumerate(geometry.position)]
-        #rotation = [i + external_rotation[index] for index, i in enumerate(geometry.rotation)]
-        position = geometry.position
-        rotation = geometry.rotation
+        position = [i + external_position[index] for index, i in enumerate(geometry.position)]
+        rotation = [i + external_rotation[index] for index, i in enumerate(geometry.rotation)]
+        #position = geometry.position
+        #rotation = geometry.rotation
         solid = geometry.solid
         data = None
         if isinstance(solid, Box):
@@ -166,7 +190,8 @@ class Writer:
         else:
             self.logger.warning("Encountered Unknown Type: {}".format(solid.__class__.__name__))
         if data is not None:
-            self.appendpolydata.AddInputData(data)
+            self.logger.debug("Writing SubGeometry: "+str(data))
+            self.appendpolydata.AddInputData(data.GetOutput())
             self.appendpolydata.Update()
         else:
             self.logger.warning("Received no data from Object: "+solid.__class__.__name__)

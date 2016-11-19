@@ -3,6 +3,7 @@ from .geometry import *
 import exceptions
 import logging
 from math import pi
+import sys
 
 
 class ParsingException(exceptions.Exception):
@@ -47,6 +48,39 @@ class Reader:
                 float(element.attrib['y'])*unit,
                 float(element.attrib['z'])*unit]
 
+    def parse_element_for_three_vectors(self, element):
+        position = element.find('position')
+        positionref = element.find('positionref')
+
+        rotation = element.find('rotation')
+        rotationref = element.find('rotationref')
+        if position is not None and positionref is not None:
+            self.logger.warning("""Both position and ref defined.
+            Parent Element: {}
+            Defaulting to position
+            """.format(volume.attrib['ref']))
+        elif positionref is not None:
+            posname = positionref.attrib['ref']
+            position = self.definitions.find("position[@name='{}']".format(
+                posname))
+            if position is None:
+                self.logger.error("Could not find position referenced to: "+posname)
+                sys.exit(-1)
+
+        if rotation is not None and rotationref is not None:
+            self.logger.warning("""Both rotation and ref defined.
+            Parent Element: {}
+            Defaulting to rotation
+            """.format(volume.attrib['ref']))
+        elif rotationref is not None:
+            rotname = rotationref.attrib['ref']
+            rotation = self.definitions.find("rotation[@name='{}']".format(
+                rotname))
+            if rotation is None:
+                self.logger.error("Could not find rotation referenced to: "+rotname)
+                sys.exit(-1)
+        return self.parse_three_vector(position), self.parse_three_vector(rotation)
+
     def process_material(self, element):
         if element is None:
             self.logger.warning("MaterialRef Not Found")
@@ -64,16 +98,10 @@ class Reader:
             second_name))
         geo.second = self.process_solid(first_vol)
         #get the first, the second , the rotation and the position
-        try:
-            rotation = element.find('rotation')
-            geo.rotation = self.parse_three_vector(rotation)
-        except:
-            pass
-        try:
-            position = element.find('position')
-            geo.position = self.parse_three_vector(position)
-        except:
-            pass
+        pos, rot = self.parse_element_for_three_vectors(element)
+        geo.position = pos
+        geo.rotation = rot
+
         return geo
 
     def process_union(self, element):
@@ -126,34 +154,10 @@ class Reader:
         return None
 
     def process_phys_vol(self, element):
-        position = element.find('position')
-        positionref = element.find('positionref')
-
-        rotation = element.find('rotation')
-        rotationref = element.find('rotationref')
 
         volume = element.find("volumeref")
         solid = element.find("solidref")
-
-        if position is not None and positionref is not None:
-            self.logger.warning("""Both position and ref defined.
-            Parent Element: {}
-            Defaulting to position
-            """.format(volume.attrib['ref']))
-        elif positionref is not None:
-            posname = positionref.attrib['ref']
-            position = self.solids.find("*position[@name='{}']".format(
-                posname))
-
-        if rotation is not None and rotationref is not None:
-            self.logger.warning("""Both rotation and ref defined.
-            Parent Element: {}
-            Defaulting to rotation
-            """.format(volume.attrib['ref']))
-        elif rotationref is not None:
-            rotname = rotationref.attrib['ref']
-            rotation = self.solids.find("*rotation[@name='{}']".format(
-                rotname))
+        position, rotation = self.parse_element_for_three_vectors(element)
 
         if volume is not None and solid is not None:
             self.logger.warning("Both Volume and Solid ref defined")
@@ -161,11 +165,9 @@ class Reader:
                 volume.attrib['ref'], solid.attrib['ref']))
 
         elif volume is not None and solid is None:
-            pos = self.parse_three_vector(position)
-            rot = self.parse_three_vector(rotation)
             vol = self.structure.find("volume[@name='{}']".format(
                 volume.attrib['ref']))
-            return self.parse_volume(vol,pos,rot)
+            return self.parse_volume(vol,position,rotation)
 
         elif volume is None and solid is not None:
             vol = Volume(element.attrib['name'], position, rotation)
