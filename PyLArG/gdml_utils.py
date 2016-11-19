@@ -74,7 +74,6 @@ class Reader:
             geo.position = self.parse_three_vector(position)
         except:
             pass
-
         return geo
 
     def process_union(self, element):
