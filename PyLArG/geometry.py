@@ -52,6 +52,8 @@ class Material:
 class Box:
     def __init__(self, pos):
         self.pos = pos
+    def __str__(self):
+        return "Box: {}".format(self.pos)
 
 class Tube:
     def __init__(self, rmin, rmax, deltaphi, startphi, z):
@@ -60,6 +62,8 @@ class Tube:
         self.deltaphi = deltaphi
         self.startphi = startphi
         self.z=z
+    def __str__(self):
+        return "Tube: {},{},{}".format(self.rmin,self.rmax, self.z)
 
 class Sphere:
     def __init__(self, rmin, rmax, deltaphi, startphi, starttheta, deltatheta):

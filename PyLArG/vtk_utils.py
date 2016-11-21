@@ -36,8 +36,9 @@ class Writer:
         vtk_box.SetXLength(box.pos[0])
         vtk_box.SetYLength(box.pos[1])
         vtk_box.SetZLength(box.pos[2])
-        #vtk_box.SetCenter(position[0],position[1],position[2])
+        vtk_box.SetCenter(0,0,0)
         vtk_box.Update()
+
         data = self.apply_transformations(vtk_box.GetOutputPort(), position, rotation)
         self.logger.debug("Writing Box")
         return data
@@ -47,10 +48,10 @@ class Writer:
         diskSource.SetInnerRadius(tube.rmin)
         diskSource.SetOuterRadius(tube.rmax)
         circumfrence = 2*pi*tube.rmax # now in cm.
+        resolution=12#start with 12
 
-        diskSource.SetCircumferentialResolution(int(circumfrence))
+        diskSource.SetCircumferentialResolution(100)
         diskSource.Update()
-        #TODO deltaphi and startphi
 
         #extrude
         linearExtrusion = vtk.vtkLinearExtrusionFilter()
@@ -60,7 +61,11 @@ class Writer:
         linearExtrusion.SetScaleFactor(tube.z)
         linearExtrusion.Update()
 
-        data = self.apply_transformations(linearExtrusion.GetOutputPort(), position, rotation)
+
+        implicit_transform =self.apply_transformations(linearExtrusion.GetOutputPort(),
+            [0,0,-tube.z/2.],[0,0,0])
+
+        data = self.apply_transformations(implicit_transform.GetOutputPort(), position, rotation)
         self.logger.debug("Writing Tube")
         return data
 
@@ -73,14 +78,17 @@ class Writer:
         return data
 
     def write_boolean_operation(self, obj, position, rotation, operation):
-        #TODO: Stop these shenanigans
         return None
-        logging.debug("Writing Boolean Object {} : {}, {}".format(
-            obj.__class__.__name__,
-            obj.first.__class__.__name__,
-            obj.second.__class__.__name__
+        logging.debug("Writing Boolean Object {}".format(
+            obj.__class__.__name__
         ) )
+        logging.debug("First: {}".format(obj.first))
+        logging.debug("Second: {}".format(obj.second))
+        logging.debug("Rotation: {}".format(rotation))
+        logging.debug("Position: {}".format(position))
+
         booleanFilter = vtk.vtkBooleanOperationPolyDataFilter()
+        booleanFilter.SetOperation(operation)
         input1 = None
         input2 = None
 
@@ -147,8 +155,7 @@ class Writer:
 
         self.logger.debug("Applying Boolean Filter")
         try:
-            booleanFilter.SetTolerance(1.0)
-            booleanFilter.SetOperation(operation)
+            booleanFilter.SetTolerance(1.e-2)
             booleanFilter.Update()
             self.logger.debug("Finished Creating Boolean Surface")
             return self.apply_transformations(booleanFilter.GetOutputPort(), rotation, position)
@@ -169,10 +176,11 @@ class Writer:
         return self.write_boolean_operation(union, position, rotation, operation)
 
     def write_subgeometry(self, geometry, external_position, external_rotation):
-        position = [i + external_position[index] for index, i in enumerate(geometry.position)]
-        rotation = [i + external_rotation[index] for index, i in enumerate(geometry.rotation)]
-        #position = geometry.position
-        #rotation = geometry.rotation
+        self.logger.debug("Processing Subgeometry: "+geometry.name)
+        position = geometry.position
+        rotation = geometry.rotation
+        #position = [i + external_position[index] for index, i in enumerate(geometry.position)]
+        #rotation = [i + external_rotation[index] for index, i in enumerate(geometry.rotation)]
         solid = geometry.solid
         data = None
         if isinstance(solid, Box):
@@ -190,7 +198,7 @@ class Writer:
         else:
             self.logger.warning("Encountered Unknown Type: {}".format(solid.__class__.__name__))
         if data is not None:
-            self.logger.debug("Writing SubGeometry: "+str(data))
+            self.logger.debug("Writing SubGeometry: "+geometry.__class__.__name__)
             self.appendpolydata.AddInputData(data.GetOutput())
             self.appendpolydata.Update()
         else:

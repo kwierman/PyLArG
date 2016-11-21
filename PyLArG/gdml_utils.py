@@ -96,12 +96,11 @@ class Reader:
         second_name = second.attrib['ref']
         second_vol = self.solids.find("*[@name='{}']".format(
             second_name))
-        geo.second = self.process_solid(first_vol)
+        geo.second = self.process_solid(second_vol)
         #get the first, the second , the rotation and the position
         pos, rot = self.parse_element_for_three_vectors(element)
         geo.position = pos
         geo.rotation = rot
-
         return geo
 
     def process_union(self, element):
@@ -143,6 +142,30 @@ class Reader:
                 startphi,
                 float(element.attrib['z'])
             )
+        elif tag == 'sphere':
+            rmin = 0.0
+            if 'rmin' in element.attrib:
+                rmin = float(element.attrib['rmin'])
+            startphi = 0.0
+            if 'startphi' in element.attrib:
+                startphi = float(element.attrib['startphi'])
+            deltaphi = 360
+            if 'deltaphi' in element.attrib:
+                deltaphi = float(element.attrib['deltaphi'])
+            starttheta=0.0
+            if 'starttheta' in element.attrib:
+                starttheta = float(element.attrib['starttheta'])
+            deltatheta = 360
+            if 'deltatheta' in element.attrib:
+                deltatheta = float(element.attrib['deltatheta'])
+            return Sphere(
+                rmin,
+                float(element.attrib['rmax']),
+                deltaphi,
+                startphi,
+                deltatheta,
+                starttheta
+                )
         elif tag == 'union':
             return self.process_union(element)
         elif tag == 'intersection':
