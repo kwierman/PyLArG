@@ -48,7 +48,6 @@ class Writer:
         diskSource.SetInnerRadius(tube.rmin)
         diskSource.SetOuterRadius(tube.rmax)
         circumfrence = 2*pi*tube.rmax # now in cm.
-        resolution=12#start with 12
 
         diskSource.SetCircumferentialResolution(100)
         diskSource.Update()
@@ -84,8 +83,8 @@ class Writer:
         ) )
         logging.debug("First: {}".format(obj.first))
         logging.debug("Second: {}".format(obj.second))
-        logging.debug("Rotation: {}".format(rotation))
-        logging.debug("Position: {}".format(position))
+        logging.debug("Rotation: {}".format(obj.rotation))
+        logging.debug("Position: {}".format(obj.position))
 
         booleanFilter = vtk.vtkBooleanOperationPolyDataFilter()
         booleanFilter.SetOperation(operation)
@@ -93,17 +92,17 @@ class Writer:
         input2 = None
 
         if isinstance(obj.first, Box):
-            input1 = self.write_box(obj.first, position, rotation)
+            input1 = self.write_box(obj.first, [0,0,0], [0,0,0])
         elif isinstance(obj.first, Tube):
-            input1 = self.write_tube(obj.first, position, rotation)
+            input1 = self.write_tube(obj.first, [0,0,0], [0,0,0])
         elif isinstance(obj.first, Sphere):
-            input1 = self.write_sphere(obj.first, position, rotation)
+            input1 = self.write_sphere(obj.first, [0,0,0], [0,0,0])
         elif isinstance(obj.first, Union):
-            input1 = self.write_union(obj.first, position, rotation)
+            input1 = self.write_union(obj.first, [0,0,0], [0,0,0])
         elif isinstance(obj.first, Subtraction):
-            input1 = self.write_intersection(obj.first, position, rotation)
+            input1 = self.write_intersection(obj.first, [0,0,0], [0,0,0])
         elif isinstance(obj.first, Intersection):
-            input1 = self.write_union(obj.first, position, rotation)
+            input1 = self.write_union(obj.first, [0,0,0], [0,0,0])
         else:
             self.logger.warning("Encountered Unknown Type: {}".format(obj.first.__class__.__name__))
             raise WritingError("Unkown Type Encountered in Boolean First")
@@ -111,17 +110,17 @@ class Writer:
             self.logger.warning("Input1 is Null for "+obj.first.__class__.__name__)
 
         if isinstance(obj.second, Box):
-            input2 = self.write_box(obj.second, position, rotation)
+            input2 = self.write_box(obj.second, obj.position, obj.rotation)
         elif isinstance(obj.second, Tube):
-            input2 = self.write_tube(obj.second, position, rotation)
+            input2 = self.write_tube(obj.second, obj.position, obj.rotation)
         elif isinstance(obj.second, Sphere):
-            input2 = self.write_sphere(obj.second, position, rotation)
+            input2 = self.write_sphere(obj.second, obj.position, obj.rotation)
         elif isinstance(obj.second, Union):
-            input2 = self.write_union(obj.second, position, rotation)
+            input2 = self.write_union(obj.second, obj.position, obj.rotation)
         elif isinstance(obj.second, Subtraction):
-            input2 = self.write_intersection(obj.second, position, rotation)
+            input2 = self.write_intersection(obj.second, obj.position, obj.rotation)
         elif isinstance(obj.second, Intersection):
-            input2 = self.write_union(obj.second, position, rotation)
+            input2 = self.write_union(obj.second, obj.position, obj.rotation)
         else:
             self.logger.warning("Encountered Unknown Type: {}".format(obj.second.__class__.__name__))
             raise WritingError("Unknown Type Encoutered in Boolean Second")
@@ -143,15 +142,12 @@ class Writer:
         tmp.Update()
         input2 = tmp
 
-        #So, here, the trick
-        transformed_surface = self.apply_transformations(input2.GetOutputPort(), obj.position, obj.rotation)
-
         if vtk.VTK_MAJOR_VERSION <= 5:
             booleanFilter.SetInputConnection( 0, input1.GetProducerPort() )
             booleanFilter.SetInputConnection( 1, input2.GetProducerPort() )
         else:
             booleanFilter.SetInputData( 0, input1.GetOutputDataObject(0) )
-            booleanFilter.SetInputData( 1, transformed_surface.GetOutputDataObject(0) )
+            booleanFilter.SetInputData( 1, input2.GetOutputDataObject(0) )
 
         self.logger.debug("Applying Boolean Filter")
         try:
@@ -177,10 +173,10 @@ class Writer:
 
     def write_subgeometry(self, geometry, external_position, external_rotation):
         self.logger.debug("Processing Subgeometry: "+geometry.name)
-        position = geometry.position
-        rotation = geometry.rotation
-        #position = [i + external_position[index] for index, i in enumerate(geometry.position)]
-        #rotation = [i + external_rotation[index] for index, i in enumerate(geometry.rotation)]
+        #position = geometry.position
+        #rotation = geometry.rotation
+        position = [i + external_position[index] for index, i in enumerate(geometry.position)]
+        rotation = [i + external_rotation[index] for index, i in enumerate(geometry.rotation)]
         solid = geometry.solid
         data = None
         if isinstance(solid, Box):

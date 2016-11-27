@@ -29,7 +29,6 @@
    <rotation name="rPMTRotation1"  unit="deg" x="90"  y="270"   z="0"/>
    <rotation name="r39degFix" unit="deg" x="0" y="39" z="0"/>
    <position name="posCenter" unit="mm" x="0" y="0" z="0"/>
-
    <position name="posEndCap1" unit="cm" x="0" y="0" z="${attributes['EndcapZcenter']}"/>
    <position name="posEndCap2" unit="cm" x="0" y="0" z="-${attributes['EndcapZcenter']}"/>
 </define>

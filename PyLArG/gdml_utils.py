@@ -11,6 +11,7 @@ class ParsingException(exceptions.Exception):
 
 
 class Reader:
+    
     logger = logging.getLogger("GDMLReader")
 
     def __init__(self, filename):
@@ -101,6 +102,9 @@ class Reader:
         pos, rot = self.parse_element_for_three_vectors(element)
         geo.position = pos
         geo.rotation = rot
+        print first_name
+        print pos
+        print rot
         return geo
 
     def process_union(self, element):
@@ -190,7 +194,11 @@ class Reader:
         elif volume is not None and solid is None:
             vol = self.structure.find("volume[@name='{}']".format(
                 volume.attrib['ref']))
-            return self.parse_volume(vol,position,rotation)
+            if vol is None:
+                raise ParsingException("Cannot Find volume with name: {} in structure".format(volume.attrib['ref']))
+            phys_vol = self.parse_volume(vol,position,rotation)
+
+            return phys_vol
 
         elif volume is None and solid is not None:
             vol = Volume(element.attrib['name'], position, rotation)

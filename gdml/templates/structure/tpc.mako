@@ -12,25 +12,27 @@
     x="${0.5*(attributes['TPCDepth']-attributes['CathodeWidth'])}"
      y="0" z="0"/>
    </physvol>
-   <physvol>
-    <volumeref ref="volTPCPlaneVert"/>
-    <position name="posTPCPlaneVert" unit="cm"
-    x="${-0.5*attributes['TPCActiveDepth']-2*attributes['TPCWirePlaneSpacing']}"
-    y="0" z="0"/>
-   </physvol>
-   <physvol>
-    <volumeref ref="volTPCPlane"/>
-    <position name="posTPCPlane" unit="cm"
-    x="${-0.5*attributes['TPCActiveDepth']-attributes['TPCWirePlaneSpacing']}"
-    y="0" z="0"/>
-   </physvol>
-   <physvol>
-    <volumeref ref="volTPCPlane"/>
-    <position name="posTPCPlane2" unit="cm"
-    x="${-0.5*attributes['TPCActiveDepth']}"
-    y="0" z="0"/>
-    <rotationref ref="rPlus180AboutY"/>
-   </physvol>
+   %if attributes['wires_on']:
+     <physvol>
+      <volumeref ref="volTPCPlaneVert"/>
+      <position name="posTPCPlaneVert" unit="cm"
+      x="${-0.5*attributes['TPCActiveDepth']-2*attributes['TPCWirePlaneSpacing']}"
+      y="0" z="0"/>
+     </physvol>
+     <physvol>
+      <volumeref ref="volTPCPlane"/>
+      <position name="posTPCPlane" unit="cm"
+      x="${-0.5*attributes['TPCActiveDepth']-attributes['TPCWirePlaneSpacing']}"
+      y="0" z="0"/>
+     </physvol>
+     <physvol>
+      <volumeref ref="volTPCPlane"/>
+      <position name="posTPCPlane2" unit="cm"
+      x="${-0.5*attributes['TPCActiveDepth']}"
+      y="0" z="0"/>
+      <rotationref ref="rPlus180AboutY"/>
+     </physvol>
+   %endif
    % for space in range(0,attributes['field_cage_width']/2, 4*attributes['field_cage_loop_interval']):
      <physvol>
       <volumeref ref="volFieldCageTubeTop"/>

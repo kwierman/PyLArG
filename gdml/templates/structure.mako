@@ -1,6 +1,8 @@
 <structure>
+  %if attributes['wires_on']:
   <%include file="structure/microplane.mako"/>
   <%include file="structure/microplanevert.mako"/>
+  %endif
   <%include file="structure/groundplate.mako"/>
   <%include file="structure/cathode.mako"/>
   <%include file="structure/fieldcage.mako"/>
