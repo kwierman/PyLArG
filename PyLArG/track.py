@@ -12,4 +12,4 @@ class Writer:
         self.points = vtk.vtkPoints()
 
     def write(self):
-        self.
+        pass

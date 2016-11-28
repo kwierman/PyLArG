@@ -8,7 +8,7 @@ class WritingError(exceptions.Exception):
     pass
 
 class Writer:
-    logger = logging.getLogger("VTKWriter")
+    logger = logging.getLogger("VTK::Writer")
 
     def __init__(self, filename):
         self.writer = vtk.vtkXMLPolyDataWriter();
@@ -60,11 +60,11 @@ class Writer:
         linearExtrusion.SetScaleFactor(tube.z)
         linearExtrusion.Update()
 
-
         implicit_transform =self.apply_transformations(linearExtrusion.GetOutputPort(),
             [0,0,-tube.z/2.],[0,0,0])
 
-        data = self.apply_transformations(implicit_transform.GetOutputPort(), position, rotation)
+        data = self.apply_transformations(implicit_transform.GetOutputPort(),
+                                          position, rotation)
         self.logger.debug("Writing Tube")
         return data
 
@@ -76,15 +76,38 @@ class Writer:
         self.logger.debug("Writing Sphere")
         return data
 
+    def check_intersection(self, input1, input2):
+        self.logger.debug("Checking Intersection")
+        bounds1 = [0.,0.,0.,0.,0.,0.]
+        bounds2 = [0.,0.,0.,0.,0.,0.]
+        input1.GetOutput().GetBounds(bounds1)
+        input2.GetOutput().GetBounds(bounds2)
+        self.logger.debug(bounds1)
+        self.logger.debug(bounds2)
+
+        #if input2 is inside input1 (assume squares)
+        if bounds1[0]<=bounds2[0]<=bounds1[1] and bounds1[0]<=bounds2[1]<=bounds1[1]:
+            if bounds1[2]<=bounds2[2]<=bounds1[3] and bounds1[2]<=bounds2[3]<=bounds1[3]:
+                if bounds1[4]<=bounds2[4]<=bounds1[5] and bounds1[4]<=bounds2[5]<=bounds1[5]:
+                    return False
+
+        #if input2 is inside input1 (assume squares)
+        if bounds2[0]<=bounds1[0]<=bounds2[1] and bounds2[0]<=bounds1[1]<=bounds2[1]:
+            if bounds2[2]<=bounds1[2]<=bounds2[3] and bounds2[2]<=bounds1[3]<=bounds2[3]:
+                if bounds2[4]<=bounds1[4]<=bounds2[5] and bounds2[4]<=bounds1[5]<=bounds2[5]:
+                    return False
+
+        return True
+
     def write_boolean_operation(self, obj, position, rotation, operation):
         return None
-        logging.debug("Writing Boolean Object {}".format(
+        self.logger.debug("Writing Boolean Object {}".format(
             obj.__class__.__name__
         ) )
-        logging.debug("First: {}".format(obj.first))
-        logging.debug("Second: {}".format(obj.second))
-        logging.debug("Rotation: {}".format(obj.rotation))
-        logging.debug("Position: {}".format(obj.position))
+        self.logger.debug("First: {}".format(obj.first))
+        self.logger.debug("Second: {}".format(obj.second))
+        self.logger.debug("Rotation: {}".format(obj.rotation))
+        self.logger.debug("Position: {}".format(obj.position))
 
         booleanFilter = vtk.vtkBooleanOperationPolyDataFilter()
         booleanFilter.SetOperation(operation)
@@ -104,11 +127,12 @@ class Writer:
         elif isinstance(obj.first, Intersection):
             input1 = self.write_union(obj.first, [0,0,0], [0,0,0])
         else:
-            self.logger.warning("Encountered Unknown Type: {}".format(obj.first.__class__.__name__))
+            cls_name = obj.first.__class__.__name__
+            self.logger.error("Encountered Unknown Type: " + cls_name)
             raise WritingError("Unkown Type Encountered in Boolean First")
         if input1 is None:
-            self.logger.warning("Input1 is Null for "+obj.first.__class__.__name__)
-
+            cls_name = obj.first.__class__.__name__
+            self.logger.warning("Input1 is Null for " + cls_name)
         if isinstance(obj.second, Box):
             input2 = self.write_box(obj.second, obj.position, obj.rotation)
         elif isinstance(obj.second, Tube):
@@ -130,31 +154,36 @@ class Writer:
         if(input1 is None or input2 is None):
             return None
 
-        #if isinstance(obj.first, Box) or isinstance(obj.first, Tube) or isinstance(obj.first, Sphere):
-        tmp = vtk.vtkTriangleFilter()
-        tmp.SetInputConnection(input1.GetOutputPort())
-        tmp.Update()
-        input1 = tmp
+        tmp1 = vtk.vtkTriangleFilter()
+        tmp1.SetInputConnection(input1.GetOutputPort())
+        tmp1.Update()
+        input1 = tmp1
 
-        #if isinstance(obj.second, Box) or isinstance(obj.second, Tube) or isinstance(obj.second, Sphere):
-        tmp = vtk.vtkTriangleFilter()
-        tmp.SetInputConnection(input2.GetOutputPort())
-        tmp.Update()
-        input2 = tmp
+        tmp2 = vtk.vtkTriangleFilter()
+        tmp2.SetInputConnection(input2.GetOutputPort())
+        tmp2.Update()
+        input2 = tmp2
 
-        if vtk.VTK_MAJOR_VERSION <= 5:
-            booleanFilter.SetInputConnection( 0, input1.GetProducerPort() )
-            booleanFilter.SetInputConnection( 1, input2.GetProducerPort() )
-        else:
-            booleanFilter.SetInputData( 0, input1.GetOutputDataObject(0) )
-            booleanFilter.SetInputData( 1, input2.GetOutputDataObject(0) )
+        self.appendpolydata.AddInputData(self.apply_transformations(input1.GetOutputPort(), rotation, position).GetOutput())
+        self.appendpolydata.Update()
+        self.appendpolydata.AddInputData(self.apply_transformations(input2.GetOutputPort(), rotation, position).GetOutput())
+        self.appendpolydata.Update()
+        return None
+
+        booleanFilter.SetInputData(0, self.apply_transformations(input1.GetOutputPort(), rotation, position).GetOutput())
+        booleanFilter.SetInputData(1, self.apply_transformations(input2.GetOutputPort(), rotation, position).GetOutput())
+
+        if not self.check_intersection(input1, input2):
+            self.logger.warning("Could NOT find intersection")
+            return None
+        self.logger.debug("Found Intersections")
 
         self.logger.debug("Applying Boolean Filter")
         try:
-            booleanFilter.SetTolerance(1.e-2)
+            booleanFilter.SetTolerance(1.e-12)
             booleanFilter.Update()
             self.logger.debug("Finished Creating Boolean Surface")
-            return self.apply_transformations(booleanFilter.GetOutputPort(), rotation, position)
+            return booleanFilter
         except:
             self.logger.warning("Failed")
             return None
@@ -173,8 +202,6 @@ class Writer:
 
     def write_subgeometry(self, geometry, external_position, external_rotation):
         self.logger.debug("Processing Subgeometry: "+geometry.name)
-        #position = geometry.position
-        #rotation = geometry.rotation
         position = [i + external_position[index] for index, i in enumerate(geometry.position)]
         rotation = [i + external_rotation[index] for index, i in enumerate(geometry.rotation)]
         solid = geometry.solid
@@ -206,10 +233,7 @@ class Writer:
         self.logger.info("Creating PolyData")
         self.write_subgeometry(geometry, [0.0,0.0,0.0], [0.0,0.0,0.0])
         self.logger.info("Finished Creating PolyData")
-        if vtk.VTK_MAJOR_VERSION <= 5:
-            self.writer.SetInput(self.appendpolydata.GetOutput())
-        else:
-            self.writer.SetInputData(self.appendpolydata.GetOutput())
+        self.writer.SetInputData(self.appendpolydata.GetOutput())
         self.writer.SetDataModeToBinary()
         self.writer.Write()
         self.logger.info("Wrote PolyData to File")

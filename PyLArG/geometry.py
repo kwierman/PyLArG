@@ -66,7 +66,8 @@ class Tube:
         return "Tube: {},{},{}".format(self.rmin,self.rmax, self.z)
 
 class Sphere:
-    def __init__(self, rmin, rmax, deltaphi, startphi, starttheta, deltatheta):
+    def __init__(self, rmin, rmax, deltaphi, 
+                 startphi, starttheta, deltatheta):
         self.rmin = rmin
         self.rmax = rmax
         self.deltaphi = deltaphi

@@ -29,7 +29,6 @@ class Reader:
     @classmethod
     def parse_three_vector(cls, element):
         if element is None:
-            #cls.logger.warning("3-Vector Queried in None Element")
             return None
         unit=1.0
         if "unit" in element.attrib:
@@ -102,9 +101,6 @@ class Reader:
         pos, rot = self.parse_element_for_three_vectors(element)
         geo.position = pos
         geo.rotation = rot
-        print first_name
-        print pos
-        print rot
         return geo
 
     def process_union(self, element):

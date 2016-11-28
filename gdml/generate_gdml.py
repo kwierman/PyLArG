@@ -6,8 +6,7 @@ import copy, os
 
 from settings import context
 """
-
-    :warning: Due to the pretty printer, the memory overhead of this quite large ( 0(10MB) ).
+    :warning: Due to the pretty printer, the memory overhead of this quite large ( O(10MB) ).
 """
 
 if __name__ == "__main__":

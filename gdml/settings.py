@@ -49,7 +49,9 @@ context['TanUVAngle'] = tan( radians(context['UVAngle']) );
 #manual context setting
 context['TPCWirePlaneWidth']	=	233.
 context['TPCWirePlaneLength']	=	1037.
-context['PMTOffset']            =   424.75*2.54/224.75*2.54/224.75*2.54/224.75*2.54/224.75*2.54/224.75*2.54/224.75*2.54/2
+context['PMTOffset'] = (424.75 * 2.54 / 224.75 * 2.54 / 224.75 * 2.54 /
+                        224.75 * 2.54 / 224.75 * 2.54 / 224.75 * 2.54 / 
+                        224.75 * 2.54 / 2)
 
 context['pi ']  = pi
 context['inch'] = 2.54
@@ -71,15 +73,19 @@ context['tpc_neg_length']	=	1000.0
 context['tpc_neg_width']	=	200.0
 context['tpc_neg_height']	=	200.0
 context['wire_frame_width']	=	9.5
-context['wire_plane_height']	=	240.0
-context['wire_plane_length']	=	1042.0
-context['wires_plength']		=	(context['wire_plane_length'] - 2*context['wire_frame_width'])
-context['wires_pwidth']		=	(context['wire_plane_height'] - 2*context['wire_frame_width'])
+context['wire_plane_height'] =	240.0
+context['wire_plane_length'] =	1042.0
+context['wires_plength'] = (context['wire_plane_length'] - 2 *
+                            context['wire_frame_width'])
+context['wires_pwidth'] = (context['wire_plane_height'] - 2 *
+                           context['wire_frame_width'])
 
-context['field_cage_width']			=	256
-context['field_cage_height']			=	207.6  #increased size to avoid overlap of TubeBottom and Top with TPCActive
-context['field_cage_cross_length']	=	sqrt((context['field_cage_width'])**2+(context['field_cage_height']-50)**2)
-context['field_cage_length']			=	1011.6 #increased size to avoid overlap of TubeFront and Back with TPCActive
+context['field_cage_width'] = 256
+context['field_cage_height'] = 207.6
+context['field_cage_cross_length'] = (sqrt((context['field_cage_width']) ** 2 +
+                                       (context['field_cage_height'] -
+                                        50) ** 2))
+context['field_cage_length'] = 1011.6
 context['field_cage_loop_interval']	=	1 	# =1 is normal, =4 skips 3/4
 
 context['FieldCageTPCClearance']	=	5*context['inch']
@@ -95,9 +101,13 @@ context['TPCTotalLength']	=	context['field_cage_length']
 context['TPCTotalWidth']	=	context['field_cage_width']
 context['TPCTotalHeight']	=	context['field_cage_height']
 
-context['FieldCageLoopLength']	=	context['TPCTotalLength']+2*(context['FieldCageTPCClearance']+2*context['FieldCageTubeRadius'])
-context['FieldCageLoopWidth']		=	context['field_cage_width']
-context['FieldCageLoopHeight']	=	context['TPCTotalHeight']+2*(context['FieldCageTPCClearance']+2*context['FieldCageTubeRadius'])
+context['FieldCageLoopLength'] = (context['TPCTotalLength'] + 2 *
+                                  (context['FieldCageTPCClearance'] +
+                                   2*context['FieldCageTubeRadius']))
+context['FieldCageLoopWidth'] = context['field_cage_width']
+context['FieldCageLoopHeight'] = (context['TPCTotalHeight'] + 2 *
+                                  (context['FieldCageTPCClearance'] +
+                                   2 * context['FieldCageTubeRadius']))
 
 context['FieldCageCornerRadius']	=	0.5*context['FieldCageTPCClearance'];
 context['FieldCageCornerY'] = (0.5 * context['FieldCageLoopHeight'] -
