@@ -9,7 +9,6 @@ class WritingError(exceptions.Exception):
 
 class Writer:
     logger = logging.getLogger("VTK::Writer")
-
     def __init__(self, filename):
         self.writer = vtk.vtkXMLPolyDataWriter();
         self.writer.SetFileName(filename);
@@ -52,7 +51,6 @@ class Writer:
         diskSource.SetCircumferentialResolution(100)
         diskSource.Update()
 
-        #extrude
         linearExtrusion = vtk.vtkLinearExtrusionFilter()
         linearExtrusion.SetInputConnection(diskSource.GetOutputPort())
         linearExtrusion.SetExtrusionTypeToNormalExtrusion()
