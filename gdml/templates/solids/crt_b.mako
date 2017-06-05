@@ -1,0 +1,18 @@
+%if attributes['gen_crt_b'] and not attributes['gen_crt_a']:
+  % for module in attributes['auxdet_dimensions']:
+    %for strip in attributes['auxdet_dimensions'][module]:
+      <box lunit="cm" name="AuxDet_Module_${module}_strip_${strip}"    
+        x="${attributes['auxdet_dimensions'][module][strip]['x']}"    
+        y="${attributes['auxdet_dimensions'][module][strip]['y']}"    
+        z="${attributes['auxdet_dimensions'][module][strip]['z']}" />
+    %endfor
+  % endfor
+  % for module in attributes['module_dimensions']:
+    %for strip in attributes['module_dimensions'][module]:
+      <box lunit="cm" name="Module_${module}_strip_${strip}"    
+        x="${attributes['module_dimensions'][module][strip]['x']}"    
+        y="${attributes['module_dimensions'][module][strip]['y']}"    
+        z="${attributes['module_dimensions'][module][strip]['z']}" />
+    %endfor
+  %endfor
+%endif
