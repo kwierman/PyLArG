@@ -7,3 +7,4 @@ build/
 *.pyx
 *.gdml
 .DS_STORE
+*~
