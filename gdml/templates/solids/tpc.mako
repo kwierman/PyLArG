@@ -1,4 +1,3 @@
-% if attributes['cryostat_on']:
   <box name="TPC"
    lunit="cm"
    x="${attributes['TPCDepth']}"
@@ -9,4 +8,3 @@
    x="${attributes['TPCActiveDepth']}"
    y="${attributes['TPCActiveHeight']}"
    z="${attributes['TPCActiveLength']}"/>
-%endif
