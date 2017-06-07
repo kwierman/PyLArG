@@ -2,6 +2,8 @@
    <materialref ref="LAr"/>
    <solidref ref="TPCActive"/>
   </volume>
+
+
   <volume name="volTPC">
    <materialref ref="LAr"/>
    <solidref ref="TPC"/>
@@ -27,8 +29,20 @@
       <rotationref ref="rPlus180AboutY"/>
      </physvol>
    %endif
+
      <physvol>
       <volumeref ref="volTPCActive"/>
       <position name="posTPCActive" unit="cm" x="-${attributes['aTPC_xoffset']}" y="0" z="0"/>
      </physvol>
   </volume>
+
+
+<volume name="volCryostat">
+   <materialref ref="LAr"/>
+   <solidref ref="Cryostat"/>
+
+   <physvol>
+    <volumeref ref="volTPC"/>
+    <position name="posTPC" unit="cm" x="-${attributes['aTPC_xoffset']}" y="0" z="0"/>
+   </physvol>   
+</volume>
