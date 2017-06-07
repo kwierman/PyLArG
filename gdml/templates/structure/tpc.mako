@@ -46,3 +46,14 @@
     <position name="posTPC" unit="cm" x="-${attributes['aTPC_xoffset']}" y="0" z="0"/>
    </physvol>   
 </volume>
+
+
+<volume name="volDetEnclosure">
+   <materialref ref="LAr"/>
+   <solidref ref="DetEnclosure"/>
+
+   <physvol>
+    <volumeref ref="volCryostat"/>
+    <position name="posCryostat" unit="cm" x="0" y="0" z="0"/>
+   </physvol>      
+</volume>

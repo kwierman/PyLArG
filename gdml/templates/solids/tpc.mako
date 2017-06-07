@@ -17,3 +17,9 @@
   y="${attributes['TPCActiveDepth']+0.1}"
   z="${attributes['TPCActiveDepth']+0.1}"
 />
+<box name="DetEnclosure"
+  lunit="cm"
+  x="${attributes['TPCActiveDepth']+0.2}"
+  y="${attributes['TPCActiveDepth']+0.2}"
+  z="${attributes['TPCActiveDepth']+0.2}"
+/>
