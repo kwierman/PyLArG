@@ -24,5 +24,4 @@ setup(
     license='BSD',
     #requires = [],
     packages=find_packages(exclude=[]),
-    #ext_modules = cythonize("pyerman/*/*.pyx")
 )
